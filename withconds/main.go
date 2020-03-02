@@ -9,9 +9,8 @@ import (
 
 // Variables partagées
 var (
-	mutex           = &sync.Mutex{}
-	violons         = sync.NewCond(mutex)
-	archets         = sync.NewCond(mutex)
+	violons         = sync.NewCond(&sync.Mutex{})
+	archets         = sync.NewCond(&sync.Mutex{})
 	nbViolonsDispos = 3
 	nbArchetsDispos = 2
 )
@@ -20,44 +19,43 @@ func musicien(num int) {
 	for {
 		time.Sleep(time.Duration(rand.Intn(10)) * time.Millisecond)
 
-		mutex.Lock()
+		violons.L.Lock()
 		for nbViolonsDispos == 0 {
 			violons.Wait()
 		}
 		nbViolonsDispos--
 		fmt.Printf("Le musicien %d a pris un violon\n", num)
-		mutex.Unlock()
+		violons.L.Unlock()
 
-		mutex.Lock()
+		archets.L.Lock()
 		for nbArchetsDispos == 0 {
 			archets.Wait()
 		}
 		nbArchetsDispos--
 		fmt.Printf("Le musicien %d a pris un archet\n", num)
 		fmt.Printf("Il reste %d violon(s) et %d archet\n", nbViolonsDispos, nbArchetsDispos)
-		mutex.Unlock()
+		archets.L.Unlock()
 
 		//time.Sleep(time.Duration(rand.Intn(10)) * time.Second)
 		fmt.Printf("....... Le musicien %d joue du violon....\n", num)
 		time.Sleep(time.Duration(rand.Intn(5)) * time.Second)
 		fmt.Printf("....... Le musicien %d a fini de jouer....\n", num)
 
-		mutex.Lock()
+		violons.L.Lock()
 		nbViolonsDispos++
 		if nbViolonsDispos >= 1 {
 			violons.Signal()
 		}
-		mutex.Unlock()
+		violons.L.Unlock()
 
-		mutex.Lock()
+		archets.L.Lock()
 		nbArchetsDispos++
 		if nbArchetsDispos >= 1 {
 			archets.Signal()
 		}
-		mutex.Unlock()
+		archets.L.Unlock()
 	}
 }
-
 
 func main() {
 
